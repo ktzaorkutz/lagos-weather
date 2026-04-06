@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API_KEY = "8c49495d691dd10a11fcbf997e190aa0"; // openweathermap.org free tier
+const API_KEY = import.meta.env.VITE_WEATHER_KEY;
 const CITY = "Lagos";
 
 const weatherIcons = {
