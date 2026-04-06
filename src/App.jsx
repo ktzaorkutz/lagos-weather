@@ -20,11 +20,23 @@ export default function LagosWeather() {
 
   useEffect(() => {
     async function fetchWeather() {
+      if (!API_KEY) {
+        setError("Weather API key is not configured (VITE_WEATHER_KEY missing)");
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}&units=metric`
         );
-        if (!res.ok) throw new Error("Failed to fetch weather");
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            body.message
+              ? `${res.status}: ${body.message}`
+              : `Request failed with status ${res.status}`
+          );
+        }
         const data = await res.json();
         setWeather(data);
       } catch (err) {
