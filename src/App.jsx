@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 
 const API_KEY = import.meta.env.VITE_WEATHER_KEY;
-const CITY = "Lagos";
 
 const weatherIcons = {
   Clear: "☀️",
@@ -13,7 +12,7 @@ const weatherIcons = {
   Haze: "🌫️",
 };
 
-export default function LagosWeather() {
+function useWeather(city) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +26,7 @@ export default function LagosWeather() {
       }
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}&units=metric`
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -46,35 +45,45 @@ export default function LagosWeather() {
       }
     }
     fetchWeather();
-  }, []);
+  }, [city]);
 
+  return { weather, loading, error };
+}
+
+function WeatherCard({ city, label }) {
+  const { weather, loading, error } = useWeather(city);
   const condition = weather?.weather?.[0]?.main;
   const icon = weatherIcons[condition] || "🌡️";
 
   return (
+    <div style={styles.card}>
+      <div style={styles.city}>{label}</div>
+
+      {loading && <div style={styles.state}>Loading...</div>}
+      {error && <div style={styles.error}>⚠️ {error}</div>}
+
+      {weather && (
+        <>
+          <div style={styles.icon}>{icon}</div>
+          <div style={styles.temp}>{Math.round(weather.main.temp)}°C</div>
+          <div style={styles.desc}>{weather.weather[0].description}</div>
+          <div style={styles.row}>
+            <Stat label="Feels like" value={`${Math.round(weather.main.feels_like)}°C`} />
+            <Stat label="Humidity" value={`${weather.main.humidity}%`} />
+            <Stat label="Wind" value={`${Math.round(weather.wind.speed)} m/s`} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
     <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.city}>Lagos, NG</div>
-
-        {loading && <div style={styles.state}>Loading...</div>}
-        {error && <div style={styles.error}>⚠️ {error}</div>}
-
-        {weather && (
-          <>
-            <div style={styles.icon}>{icon}</div>
-            <div style={styles.temp}>
-              {Math.round(weather.main.temp)}°C
-            </div>
-            <div style={styles.desc}>
-              {weather.weather[0].description}
-            </div>
-            <div style={styles.row}>
-              <Stat label="Feels like" value={`${Math.round(weather.main.feels_like)}°C`} />
-              <Stat label="Humidity" value={`${weather.main.humidity}%`} />
-              <Stat label="Wind" value={`${Math.round(weather.wind.speed)} m/s`} />
-            </div>
-          </>
-        )}
+      <div style={styles.cards}>
+        <WeatherCard city="Lagos" label="Lagos, NG" />
+        <WeatherCard city="Nicosia" label="Cyprus, CY" />
       </div>
     </div>
   );
@@ -97,6 +106,13 @@ const styles = {
     justifyContent: "center",
     background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
     fontFamily: "'Segoe UI', sans-serif",
+    padding: "24px",
+  },
+  cards: {
+    display: "flex",
+    gap: "24px",
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   card: {
     background: "rgba(255,255,255,0.08)",
