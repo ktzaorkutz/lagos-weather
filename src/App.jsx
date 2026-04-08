@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 
 const WEATHER_KEY = import.meta.env.VITE_WEATHER_KEY;
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY;
+const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 const weatherIcons = {
   Clear: "☀️",
@@ -111,8 +111,8 @@ function useAIForecast(slots, cityName) {
 
   useEffect(() => {
     if (!slots || !cityName) return;
-    if (!ANTHROPIC_KEY) {
-      setError("VITE_ANTHROPIC_KEY not configured");
+    if (!GROQ_KEY) {
+      setError("VITE_GROQ_API_KEY not configured");
       return;
     }
 
@@ -122,8 +122,8 @@ function useAIForecast(slots, cityName) {
 
     async function fetchAIForecast() {
       try {
-        const client = new Anthropic({
-          apiKey: ANTHROPIC_KEY,
+        const client = new Groq({
+          apiKey: GROQ_KEY,
           dangerouslyAllowBrowser: true,
         });
 
@@ -131,10 +131,9 @@ function useAIForecast(slots, cityName) {
           .map((s) => `${s.time}: ${s.temp}°C, ${s.description}`)
           .join("\n");
 
-        const message = await client.messages.create({
-          model: "claude-opus-4-6",
+        const response = await client.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
           max_tokens: 256,
-          thinking: { type: "adaptive" },
           messages: [
             {
               role: "user",
@@ -143,11 +142,7 @@ function useAIForecast(slots, cityName) {
           ],
         });
 
-        const text = message.content
-          .filter((b) => b.type === "text")
-          .map((b) => b.text)
-          .join("");
-        setSummary(text);
+        setSummary(response.choices[0].message.content);
       } catch (err) {
         setError(err.message);
       } finally {
